@@ -12,9 +12,11 @@ knitr::opts_chunk$set(warning = FALSE)
 knitr::opts_chunk$set(message = FALSE)
 ```
 
-## Reading the data
+## Reading and Processing the Data
 
-The data for this assignment is available at this [link](https://github.com/rdpeng/RepData_PeerAssessment1/blob/master/activity.zip): 
+The data for this assignment is available at this [link](https://github.com/cvscastejon/RepData_PeerAssessment1): 
+
+### Reading the data
 
 The link downloads a zip folder called "activity.zip". We unzip the folder and use read.csv, since the data is in a csv file and assign it to a data frame called `activity`. Then we get the class of all columns, to determine if any transformation is necessary.
 
@@ -24,7 +26,7 @@ activity <- read.csv("activity.csv")
 lapply(activity, class)
 ```
 
-
+### Processing the Data
 The second step is to do some processing. That includes turning the second column (date) into a date format.
 For that, we use the library lubridate to make things simple.
 
@@ -37,24 +39,27 @@ lapply(activity, class)
 ## Mean Number of Steps Taken Per Day
 
 In this segment, we want to make a histogram of the total number of steps, taken each day. 
+
+### Histogram of Total Number of Steps
 First we need to create a new data set that contatins this information. For that, we use the library `dyplr` to make things simpler.
 Then, we simply group the data by date, making a sum of the number of steps and ploting a histogram from the bae plot system.
-Finally, we calculate the mean and the median of the total number os steps taken each day.
 
 
 ```{r total_number_steps}
 library(dplyr)
 totalSteps <- activity %>% group_by(date) %>% summarize(total_steps = sum(steps, na.rm = TRUE)) 
-hist(totalSteps$total_steps, xlab = "Total Number of Steps")
+hist(totalSteps$total_steps, xlab = "Daily Number of Steps", main = "Number of Steps Per Day")
 ```
 
-Median Calculation:
+Finally, we calculate the mean and the median of the total number os steps taken each day.
+
+### Median Calculation:
 
 ```{r steps_median}
 median(totalSteps$total_steps)
 ```
 
-Mean Calculation:
+### Mean Calculation:
 
 ```{r steps_mean}
 mean(totalSteps$total_steps)
@@ -64,13 +69,18 @@ mean(totalSteps$total_steps)
 ## Average Daily Pattern
 
 In this segment we calculate and make a time series plot of the 5-minute interval and average number of steps taken across all days.
+
+### Average Number of Steps 
+
 Just like we did in the last segment, first we make a new data frame containing the time intervals and the average of the number of steps per interval. We do that using the same `dplyr` library.
 
 
 ```{r average_steps_interval}
 averageDaily <- activity %>% group_by(interval) %>% summarize(average_steps = mean(steps, na.rm = TRUE)) 
-plot(averageDaily$interval, averageDaily$average_steps, type = "l")
+plot(averageDaily$interval, averageDaily$average_steps, type = "l", xlab = "Time Interval", ylab = "Average number of steps ", main = "Average number of steps per time interval")
 ```
+
+### Time interval with maximum average
 
 To get the interval with the maximum average value of number of steps, we use the `which.max` function.
 
@@ -89,7 +99,7 @@ To do that, first we calculate the total number of missing values:
 sum(is.na(activity$steps))
 ```
 
-
+### NA filling strategy: weekday, time interval average
 To fill in the missing values, the strategy we will use will be to use the average for that interval in that particular week day.
 So, we create a new data set filling the missing values from the activity data set with this information. 
 
@@ -99,8 +109,10 @@ First step, we create a dataframe with the average value by interval and weekday
 avgIntWday <- activity %>% mutate(wday = wday(date, label = TRUE, abbr = TRUE)) %>% group_by(wday, interval)  %>% summarise(avg_step = mean(steps, na.rm = TRUE))
 ```
 
-With the data set with the averages calculated, we create a new data frame from activity with the missing values filled. We do that using a `for` loop to go in every missing value of the steps column in the data frame we just created. It then, checks the date and the interval of that missing values, and retrieves the average from that missing value from the `avgIntWday` data frame just created.
 
+### Filling the missing values
+
+With the data set with the averages calculated, we create a new data frame from activity with the missing values filled. We do that using a `for` loop to go in every missing value of the steps column in the data frame we just created. It then, checks the date and the interval of that missing values, and retrieves the average from that missing value from the `avgIntWday` data frame just created.
 
 ```{r average_interval_weekday_filling}
 filledActivity <- activity
@@ -114,22 +126,24 @@ for(i in 1:length(filledActivity$steps)){
 }
 ```
 
+
+### Histogram of data frame without missing values
 Now we need to compare this new data frame with the original one using the histogram and new values for mean and median
 
 ```{r average_interval_weekday_histogram}
 totalStepsFilled <- filledActivity %>% group_by(date) %>% summarize(total_steps = sum(steps, na.rm = TRUE)) 
-hist(totalStepsFilled$total_steps, xlab = "Total Number of Steps")
+hist(totalStepsFilled$total_steps, xlab = "Daily Number of Steps", main = "Number of Steps Per Day")
 ```
 
 Finally we calculate the new medians and means for the data with the missing values filled
 
-Median Calculation:
+### Median Calculation:
 
 ```{r steps_filled_median}
 median(totalStepsFilled$total_steps)
 ```
 
-Mean Calculation:
+### Mean Calculation:
 
 ```{r steps_filled_mean}
 mean(totalStepsFilled$total_steps)
@@ -191,10 +205,12 @@ filledActivity$daytype <- as.factor(unlist(filledActivity$daytype))
 
 With this information in hand, the next step is to print a plot comparing the average number of steps taken for evey time interval for weekends and weekdays, across all weekends or weekdays.
 
+### Panel Plot with average number of steps per interval per acros weekdays and weekends
+
 For that, we use the lattice plot system
 ```{r day_type_plot}
 filledTable <- filledActivity %>% group_by(interval,daytype) %>% summarise(avg_step = mean(steps))
 library(lattice)
-xyplot(avg_step~interval|daytype, type = "l", data = filledTable,layout=c(1,2))
+xyplot(avg_step~interval|daytype, type = "l", data = filledTable,layout=c(1,2), xlab = "Time Interval", ylab = "Average Number of Steps")
 ```
 
